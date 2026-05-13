@@ -73,7 +73,7 @@ Wait for the user to confirm, re-run the registry check to verify. If verified, 
 
 ## Phase 3 — Audit Integration Status
 
-Call the list connections tool to open the integrations UI:
+Call the list integrations tool to open the integrations UI:
 
 ```
 noibu_list_integrations()

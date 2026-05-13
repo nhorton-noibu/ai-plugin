@@ -1,14 +1,14 @@
 # Integrations
 
-Read this reference when the user asks about integrations, connections, available services, "connect a new service", "check my integrations", or "what can I connect" — or when they want to disconnect or reconnect something.
+Read this reference when the user asks about integrations, available services, "connect a new service", "check my integrations", or "what can I connect" — or when they want to disconnect or reconnect something.
 
 Four tools manage the integration lifecycle.
 
-## noibu_list_connections
+## noibu_list_integrations
 
-Renders an interactive integrations panel inside Claude's UI listing all supported services and their current connection status (connected, not-connected, expired, failed, pending). Call when the user asks about integrations, connections, available services, "connect a new service", "check my integrations", or "what can I connect".
+Renders an interactive integrations panel inside Claude's UI listing all supported services and their current connection status (connected, not-connected, expired, failed, pending). Call when the user asks about integrations, available services, "connect a new service", "check my integrations", or "what can I connect".
 
-**After calling this tool, do NOT generate a text table, list, or summary of the connections.** The UI panel displays all the data. Respond with one brief sentence at most (e.g. "Here are your integrations.") then stop.
+**After calling this tool, do NOT generate a text table, list, or summary of the integrations.** The UI panel displays all the data. Respond with one brief sentence at most (e.g. "Here are your integrations.") then stop.
 
 The rendered panel has built-in **Connect** and **Disconnect** buttons per row that drive `noibu_connect` / `noibu_disconnect` directly from the iframe. You don't need to call those tools yourself once the panel is up unless the user asks in chat.
 
@@ -38,7 +38,7 @@ Toolkit slug → display name:
 
 ## Connection flow
 
-1. User asks about integrations → call `noibu_list_connections` — the Connections panel mounts and shows all connectors grouped by category.
+1. User asks about integrations → call `noibu_list_integrations` — the Integrations panel mounts and shows all connectors grouped by category.
 2. The panel owns Connect and Disconnect — **do not call `noibu_connect` or `noibu_disconnect` directly while the panel is visible**.
 3. After the user clicks **Connect** in the panel, it opens the OAuth URL automatically and polls every 10 s (up to 1 min) until the connection succeeds or fails — **do not prompt the user to say "done"** and do not call `noibu_check_connection`.
 4. If the panel is not mounted (chat-only context), call `noibu_connect` directly, then ask the user to say "done" and call `noibu_check_connection` to confirm.
