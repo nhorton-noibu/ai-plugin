@@ -1,0 +1,68 @@
+name: Release Plugin
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute next version
+        id: version
+        run: |
+          LATEST=$(git tag --list 'v*' --sort=-version:refname | head -n1)
+          if [ -z "$LATEST" ]; then
+            NEXT="v0.1.0"
+          else
+            # Strip leading v, split on dots, bump patch
+            IFS='.' read -r MAJOR MINOR PATCH <<< "${LATEST#v}"
+            NEXT="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
+          echo "tag=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "version=${NEXT#v}" >> "$GITHUB_OUTPUT"
+          echo "Next version: $NEXT"
+
+      - name: Stamp version into plugin.json
+        run: |
+          jq --arg v "${{ steps.version.outputs.version }}" '.version = $v' \
+            src/.claude-plugin/plugin.json > tmp.json && mv tmp.json src/.claude-plugin/plugin.json
+
+      - name: Package plugin
+        run: |
+          NAME=$(jq -r .name src/.claude-plugin/plugin.json)
+          VERSION=$(jq -r .version src/.claude-plugin/plugin.json)
+          OUT="dist/${NAME}-${VERSION}.zip"
+          mkdir -p dist
+          cd src && zip -r "../$OUT" .claude-plugin .mcp.json skills -x '*.DS_Store'
+          echo "ARTIFACT=$OUT" >> "$GITHUB_ENV"
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" "$ARTIFACT" \
+            --title "${{ steps.version.outputs.tag }}" \
+            --generate-notes
+
+      - name: Update latest tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Delete existing latest release and tag if present
+          gh release delete latest --yes 2>/dev/null || true
+          git tag -d latest 2>/dev/null || true
+          git push origin :refs/tags/latest 2>/dev/null || true
+
+          # Create new latest release pointing at the same artifact
+          gh release create latest "$ARTIFACT" \
+            --title "Latest" \
+            --notes "Points to ${{ steps.version.outputs.tag }}" \
+            --latest
