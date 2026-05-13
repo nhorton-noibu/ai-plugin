@@ -57,14 +57,14 @@ Both query tools require `orderBy` at the `input` level — see **Query Constrai
 |---|---|
 | "how many clicks on /url", "top clicked on /url", "which CTA on /url" | `noibu_get_page_visits` |
 | "% scroll to … on /url", "avg scroll depth on /url", "reach footer on /url" | `noibu_get_page_visits` |
-| "show the clickmap for /url" | `noibu_show_clickmap` (`visualization.clickMap`) |
-| "show the scrollmap for /url" | `noibu_show_clickmap` (`visualization.scrollMap`) |
+| "show the clickmap for /url" | `noibu_visualize_page_visits` (`visualization.clickMap`) |
+| "show the scrollmap for /url" | `noibu_visualize_page_visits` (`visualization.scrollMap`) |
 | "How many sessions reached cart / checkout / payment", "conversion-funnel step counts" | `noibu_search_sessions` |
 | "Show / chart / visualize the conversion funnel", "checkout funnel chart" | the `ecommerce-funnel-visualization` skill (renderer; expects step+sessions data already fetched) |
 
 **No URL**: site-wide click prompts ("top CTAs", "what users click most") → `noibu_search_sessions`'s `CLICKED_TEXT`. Scroll has no site-wide equivalent — stay on `noibu_get_page_visits`. If scope is unclear, ask.
 
-Prefer `noibu_show_clickmap` over hand-rolled SVG, chart libraries, or other generic visualizations — the iframe IS the visualization.
+Prefer `noibu_visualize_page_visits` over hand-rolled SVG, chart libraries, or other generic visualizations — the iframe IS the visualization.
 
 ## Sessions vs page visits
 

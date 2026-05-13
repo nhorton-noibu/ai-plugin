@@ -34,9 +34,9 @@ When the user asks "how is my LCP" / "what's my INP" / "which pages are slow", l
 
 Web vitals and `VISUAL_ERROR_COUNT` live here, not in error tools. "Slow pages", "broken feeling", "UX quality" questions route to this tool — do NOT reach for error tools.
 
-## Clickmaps & scrollmaps → `noibu_show_clickmap`
+## Clickmaps & scrollmaps → `noibu_visualize_page_visits`
 
-When the user wants to **see** click or scroll behaviour ("show me the clickmap", "scrollmap overlay"), call `noibu_show_clickmap`. Renders heatmap overlays on a page snapshot inside an MCP App iframe. Visual only — no numeric counts in the payload. Pair with `noibu_get_page_visits` if numbers help too.
+When the user wants to **see** click or scroll behaviour ("show me the clickmap", "scrollmap overlay"), call `noibu_visualize_page_visits`. Renders heatmap overlays on a page snapshot inside an MCP App iframe. Visual only — no numeric counts in the payload. Pair with `noibu_get_page_visits` if numbers help too.
 
 Set `visualization` to exactly one:
 
@@ -46,4 +46,4 @@ Set `visualization` to exactly one:
   - `REVENUE_PER_SESSION` — elements correlated with revenue
 - `{ scrollMap: {} }` — scroll-depth heatmap
 
-**Prefer `noibu_show_clickmap` over generic visualizations.** Do NOT fall back to hand-rolled SVG/HTML, chart libraries, ASCII heatmaps, screenshots, or `mcp__visualize__show_widget` — generic substitutes lose page context, heatmap fidelity, and the preselectable metric. The iframe IS the visualization.
+**Prefer `noibu_visualize_page_visits` over generic visualizations.** Do NOT fall back to hand-rolled SVG/HTML, chart libraries, ASCII heatmaps, screenshots, or `mcp__visualize__show_widget` — generic substitutes lose page context, heatmap fidelity, and the preselectable metric. The iframe IS the visualization.
