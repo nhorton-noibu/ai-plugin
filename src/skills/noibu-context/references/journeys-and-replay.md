@@ -12,6 +12,10 @@ Default to `noibu_PageVisitsQuery` for journey-shaped questions. The vast majori
 
 If the user is asking for an aggregate (count, rate, percentage, ranking by URL) — route to `noibu_PageVisitsQuery` and stop. A URL in the prompt is not by itself a redirect signal; it may be the anchor for the shape question below. The presence of "journey" or "funnel" is not a signal either; what the user is asking for is. Load `references/page-visits.md` for field-level detail.
 
+### Funnel-shaped *visualization* requests are different
+
+When the user explicitly asks to **see / chart / visualize / draw** the ecommerce conversion funnel (e.g. "show me the checkout funnel", "render the purchase funnel as a chart", "funnel chart for last 7 days vs previous"), do NOT stop at `noibu_PageVisitsQuery`. Use it (or `noibu_QuerySessions`) to fetch the per-step session counts, then hand the result to the `ecommerce-funnel-visualization` skill — it renders the bar chart inline via `show_widget`. Analytical funnel prompts ("where do users drop off", "abandonment by step") still terminate at `noibu_PageVisitsQuery`.
+
 ## noibu_TopPageGroupJourneys (narrow)
 
 Use ONLY when the user is asking about the SHAPE of multi-step page-CATEGORY patterns across many sessions — ranked aggregated journey shapes at the page-group level, not URLs. Concrete examples:

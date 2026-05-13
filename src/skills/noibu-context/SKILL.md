@@ -40,8 +40,12 @@ Both query tools require `orderBy` at the `input` level — see **Query Constrai
   load `references/visualize-page-visits.md`.
 - Multi-step journey patterns / shapes across many sessions, OR an explicit
   request to watch a session replay → load `references/journeys-and-replay.md`.
-  Note: "funnel", "drop-off", "what comes after /cart" are URL-level
-  questions — use `noibu_PageVisitsQuery` (see above).
+  Note: "drop-off", "where do users abandon", "what comes after /cart" are
+  URL-level analytics questions — use `noibu_PageVisitsQuery` (see above).
+- "Show / chart / visualize the conversion funnel", "checkout funnel chart",
+  "purchase journey chart" → load the `ecommerce-funnel-visualization` skill.
+  It is a renderer only; fetch the per-step session counts from
+  `noibu_QuerySessions` (or `noibu_PageVisitsQuery`) first.
 - Errors / bugs / crashes — only when the user EXPLICITLY asks. Load
   `references/errors.md`. Not a generic "what to fix" entrypoint.
 - Connect / disconnect / list integrations → load `references/integrations.md`.
@@ -55,6 +59,8 @@ Both query tools require `orderBy` at the `input` level — see **Query Constrai
 | "Show / view / visualize / display the clickmap" | `noibu_show_page_visits_visualization` with `visualization.clickMap` |
 | "What % scroll to …", "average scroll depth", "how many reach the bottom/footer" | `noibu_PageVisitsQuery` |
 | "Show / view / visualize / display the scrollmap" | `noibu_show_page_visits_visualization` with `visualization.scrollMap` |
+| "How many sessions reached cart / checkout / payment", "conversion-funnel step counts" | `noibu_QuerySessions` |
+| "Show / chart / visualize the conversion funnel", "checkout funnel chart" | the `ecommerce-funnel-visualization` skill (renderer; expects step+sessions data already fetched) |
 
 ## Sessions vs page visits
 
@@ -161,6 +167,7 @@ Load exactly one reference based on the topic of the user's question. Each file 
 | Page-level analytics (per-page traffic, time on page, web vitals, landing/exit pages, visual errors, scroll depth, cohort behaviour by URL) | `references/page-visits.md` |
 | Clicks or scroll behaviour — quantitative ("how many", "top clicked", "% reaching footer") | `references/page-visits.md` |
 | Clicks or scroll behaviour — visual ("show the clickmap/scrollmap") | `references/visualize-page-visits.md` |
+| Rendering an ecommerce conversion funnel as a chart ("show the funnel", "checkout funnel chart") | the `ecommerce-funnel-visualization` skill (sibling skill, not a reference) |
 | Multi-step journey shape patterns across many sessions, OR an explicit request to watch a session replay | `references/journeys-and-replay.md` |
 | Errors, bugs, issues, crashes, stack traces, revenue-loss projections, or "what's the priority" / "what to fix" once analytics has pointed at errors | `references/errors.md` |
 | Connecting, disconnecting, listing, or checking the status of third-party integrations | `references/integrations.md` |
