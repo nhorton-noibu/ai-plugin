@@ -146,8 +146,9 @@ Follow-up queries are not predetermined — they depend on what the data shows.
 
 | If you see this… | Consider this follow-up |
 |---|---|
-| Product in top-20 views but low view-to-ATC rate | Page-level deep-dive: scroll depth, time on page, click engagement, errors — low scroll depth is the most common explanation |
-| Product with strong ATC but weak purchase completion | Funnel depth breakdown: filter to sessions that viewed this product and group by funnel depth to see exactly where they stop |
+| Any product flagged as a key anomaly | Funnel depth breakdown first — it renders the funnel chart and shows where the cliff is. Then layer the targeted follow-up below. |
+| Product in top-20 views but low view-to-ATC rate | Page-level deep-dive **after** the funnel chart: scroll depth, time on page, click engagement, errors — low scroll depth is the most common explanation for a view→ATC cliff. |
+| Product with strong ATC but weak purchase completion | The funnel chart will already show whether the cliff is checkout-start, payment, or completion. Drill into the specific stage from there. |
 | Collection with CVR well below site average | Country breakdown: filter to sessions that viewed this collection and group by country — near-zero CVR in multiple LATAM or non-primary markets usually means a localization or checkout gap, not a product problem |
 | A collection's CVR well below others in same category | Product mix drill-down: filter sessions by collection and group by viewed product titles to see which products in the collection are and aren't converting |
 | Product type outperforming or underperforming significantly | Break down by product title within that type to find which specific products are driving or dragging the number |
@@ -203,7 +204,7 @@ Interpret scroll depth:
 - High errors on one URL variant: potential JS error blocking add-to-cart
 
 ### Funnel depth breakdown for a specific product
-Use `noibu_search_sessions` when a product has strong ATC but weak purchase.
+Run this **whenever a product is flagged as a key anomaly** — regardless of which step the drop is at. The funnel chart is the best way to communicate where sessions are lost, and a view-to-ATC cliff is often the more important story than an ATC→purchase one. Use `noibu_search_sessions`.
 
 Filter to sessions where the target product title was viewed. Group by the funnel
 depth field (represents how far through the purchase funnel the session
