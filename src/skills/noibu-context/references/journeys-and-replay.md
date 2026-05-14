@@ -6,19 +6,19 @@ Read this reference when the user asks about the shape of multi-step journey pat
 
 Default to `noibu_get_page_visits` for journey-shaped questions. The vast majority of prompts that mention "journey", "funnel", "drop-off", "navigation", "path", or "what comes after /cart" are URL-level questions that PageVisitsQuery answers directly:
 
-- **One-hop predecessor / successor** — "what page comes after /cart", "what's the top URL before /checkout" → URL + `PREV_URL`.
+- **One-hop predecessor / successor** — "what page comes after /cart", "what's the top URL before /checkout" → `URL` + `PREV_URL`.
 - **Drop-off / exit / abandonment** — "where do users drop off in checkout", "which pages do users exit from" → `IS_EXIT_PAGE`.
 - **Landing / entry** — "what pages do users land on", "which landing pages convert" → `IS_LANDING_PAGE`.
 
-If the user is asking for an aggregate (count, rate, percentage, ranking by URL) — route to `noibu_get_page_visits` and stop. A URL in the prompt is not by itself a redirect signal; it may be the anchor for the shape question below. The presence of "journey" or "funnel" is not a signal either; what the user is asking for is. Load `references/page-visits.md` for field-level detail.
+If the user is asking for an aggregate (count, rate, percentage, ranking by URL) — route to `noibu_get_page_visits` and stop. A URL in the prompt is not by itself a redirect signal; it may be the anchor for the shape question below. Load `references/page-visits.md` for field-level detail.
 
 ### Funnel-shaped *visualization* requests are different
 
 When the user explicitly asks to **see / chart / visualize / draw** the ecommerce conversion funnel (e.g. "show me the checkout funnel", "render the purchase funnel as a chart", "funnel chart for last 7 days vs previous"), do NOT stop at `noibu_get_page_visits`. Use it (or `noibu_search_sessions`) to fetch the per-step session counts, then hand the result to the `ecommerce-funnel-visualization` skill — it renders the bar chart inline via `show_widget`. Analytical funnel prompts ("where do users drop off", "abandonment by step") still terminate at `noibu_get_page_visits`.
 
-## noibu_get_user_journeys (narrow)
+## noibu_list_page_group_journeys (narrow)
 
-Use ONLY when the user is asking about the SHAPE of multi-step page-CATEGORY patterns across many sessions — ranked aggregated journey shapes at the page-group level, not URLs. Concrete examples:
+Use when the user is asking about the SHAPE of multi-step page-CATEGORY patterns across many sessions — ranked aggregated journey shapes at the page-group level, not URLs. Concrete examples:
 
 - "What shapes do multi-step journeys leading into Checkout take?"
 - "What does the purchase funnel look like at a category level?"
@@ -29,15 +29,15 @@ Output is page-group names (e.g. `Product`, `Cart`, `Checkout`), not URLs. Ungro
 
 ### When you use this tool, also call noibu_get_page_visits in parallel
 
-The tool returns aggregated page-CATEGORY shapes — it hides the underlying URLs and intra-group depth (`[Product]` covers a session that saw one PDP and a session that saw thirty). To give a complete answer, run `noibu_get_page_visits` alongside for URL-level grounding (which specific URLs make up each step, how many PDPs per session, etc.). Do not conclude on the page-group shape alone.
+This tool returns page-category shapes and hides the underlying URLs and intra-group depth (`[Product]` covers a session that saw one PDP and one that saw thirty). Calling `noibu_get_page_visits` alongside for URL-level grounding is strongly recommended, and when you are uncertain whether the user needs URL detail, call both. If the user's question turns on exact URLs (e.g., "what pages come before and after X") or on how often a category was visited, `noibu_get_page_visits` is essential and the intra-group depth should be surfaced to the user. The parallel-call rule is about completing journey-shape answers — it is NOT a reason to call this tool when `noibu_get_page_visits` alone would have answered the question.
 
 ### Page-group coverage is a prerequisite
 
-The output is only useful if the customer has configured page groups on their domain. If `forwardPaths` is dominated by the `No Page Group` sentinel — or top patterns look like `[No Page Group, No Page Group, …]` — coverage is poor. Abandon this tool for the question, answer from `noibu_get_page_visits` instead, and surface the coverage gap to the user.
+The output is only useful if the customer has configured page groups on their domain. If `forwardPaths` is dominated by the `No Page Group` sentinel, coverage is poor. Abandon this tool for the question and answer from `noibu_get_page_visits` instead.
 
 ### Always pass `minSteps = 3`
 
-The schema default is 1, but always pass 3. At 1, single-bucket bouncer shapes (`[Product]`, `[Home]`) flood the top-N and bury the funnel and conversion patterns users actually want to see. Lower only when the user explicitly asks about short / bouncer journeys.
+The schema default is 1, but always pass 3. At 1, single-bucket bouncer shapes (`[Product]`, `[Home]`) flood the top-N and bury the funnel and conversion patterns users actually want to see. Use 1 or 2 only when the user explicitly asks about bouncer or single-hop questions; raise above 3 only when they want long, deep journeys.
 
 ### Anchor
 
@@ -52,11 +52,9 @@ The anchor visit's own step is NOT in either path array — the full journey is 
 
 `exitingSessionCount < sessionCount` (forward) or `landingSessionCount < sessionCount` (backward) means those sessions were capped by `maxDepth`. The path's length is a lower bound, not the actual journey length. Raise `maxDepth` (up to 15) if the user needs to see further.
 
-### Anti-patterns
+### Pattern coverage check
 
-- Do not call this tool for URL-level questions — use `noibu_get_page_visits`.
-- Do not call this tool for counts, rates, bounce, exit, or landing analysis — use `noibu_get_page_visits`.
-- Do not pass URLs in `sessionFilters` — session-scope only (device, browser, UTM, conversion). Same shape as QuerySessions filters. `ExpressionFilter` is rejected.
+Compare `totalMatchingSessions` to the sum of `sessionCount` across returned patterns. When the sum is much smaller than the total, the long tail dominates: either raise `limit` (schema default 25, max 500 — 100 is a reasonable exploration starting point) or narrow the population with `sessionFilters` (e.g., filter to converters when the question is about conversion). The top-N alone is misleading without this coverage check.
 
 ## noibu_show_session_replay
 

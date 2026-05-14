@@ -35,13 +35,15 @@ Both query tools require `orderBy` at the `input` level — see **Query Constrai
 - "conversion rate", "revenue by X", "what % of sessions did Y", "AOV" →
   `noibu_search_sessions` (load `references/sessions.md`).
 - "which pages are slow / broken / get the most traffic", web vitals
-  (LCP/CLS/INP) → `noibu_get_page_visits` (load `references/page-visits.md`).
+  (LCP/CLS/INP), multi-URL navigation paths between specific pages, one-hop
+  predecessor/successor ("what page comes before/after /X") →
+  `noibu_get_page_visits` (load `references/page-visits.md`).
 - Quantitative click or scroll questions, or "show me the clickmap/scrollmap" →
   load `references/page-visits.md`.
-- Multi-step journey patterns / shapes across many sessions, OR an explicit
-  request to watch a session replay → load `references/journeys-and-replay.md`.
-  Note: "drop-off", "where do users abandon", "what comes after /cart" are
-  URL-level analytics questions — use `noibu_get_page_visits` (see above).
+- Page-CATEGORY journey patterns across many sessions (e.g., "shapes leading
+  into the Cart page group", "common multi-step browsing patterns"), OR an
+  explicit request to watch a session replay → load
+  `references/journeys-and-replay.md`.
 - "Show / chart / visualize the conversion funnel", "checkout funnel chart",
   "purchase journey chart" → load the `ecommerce-funnel-visualization` skill.
   It is a renderer only; fetch the per-step session counts from

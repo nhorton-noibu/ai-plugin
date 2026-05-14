@@ -241,7 +241,7 @@ viewed product titles field (array join, limit 25). Measure session count and
 conversion rate. Order by sessions descending.
 
 ### Journey paths from a product page
-Use `noibu_get_user_journeys` when you want to understand exit behaviour for a
+Use `noibu_list_page_group_journeys` when you want to understand exit behaviour for a
 specific product — especially one with high views but high bounce.
 
 Anchor on URLs starting with the product's slug fragment, using loose mode.

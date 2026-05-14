@@ -156,7 +156,7 @@ they depend on what the data shows.
 |---|---|
 | High checkout → payment drop (depth 2→3) | Break down by device type — filter to checkout-entering sessions, group by device; mobile form friction is the most common explanation |
 | High payment → completion drop (depth 3→4) | Break down by payment method — filter to payment-submitted sessions, group by payment method names; completion rates often vary sharply by gateway |
-| ATC → checkout start rate unexpectedly low | `noibu_get_user_journeys` anchored to `/cart` to see what users do instead of proceeding |
+| ATC → checkout start rate unexpectedly low | `noibu_list_page_group_journeys` anchored to `/cart` to see what users do instead of proceeding |
 | Suspicion that a market blocks at checkout | Group by country filtered to cart-adding sessions — near-zero CVR in a high-traffic country usually means a shipping restriction or missing payment method |
 | Active priority errors returned | Call `noibu_get_error` on the top 1–2 issues; include humanId and title so a developer can find them in the console |
 | Discount rate very high (>50% of checkout sessions) | Flag as a business observation — high promotion dependency is a margin risk; no Noibu follow-up needed |
@@ -215,7 +215,7 @@ Call `noibu_get_error` on the top 1–2 issues by session impact.
 Include humanId and title in the report so the developer can find them in the console.
 
 ### Cart page exit analysis
-Use `noibu_get_user_journeys` when ATC → checkout start rate is unexpectedly low.
+Use `noibu_list_page_group_journeys` when ATC → checkout start rate is unexpectedly low.
 
 Anchor on URLs starting with /cart, using loose mode. Retrieve forward paths only
 to a max depth of 5 steps.
