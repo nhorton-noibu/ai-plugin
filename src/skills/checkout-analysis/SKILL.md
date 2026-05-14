@@ -123,10 +123,18 @@ Note: depth-4 exceeding depth-3 is expected — see express checkout note in dat
 Present results in four sections. Use plain column headers — never expose internal
 field names.
 
-**Funnel section**: Show a waterfall table with each step, session count, and
-drop-off rate to the next step. Call out the single largest drop explicitly
-("62% of sessions that started checkout never submitted payment — that's your
-largest single drop-off"). Apply the express checkout caveat if depth-4 > depth-3.
+**Funnel section**: First, render the funnel as an inline bar chart — load
+`../noibu-context/references/funnel-visualization.md` and follow its workflow.
+Map depth counts to steps:
+  1. Add to cart (depth 1+ sessions)
+  2. Checkout started (depth 2+)
+  3. Payment submitted (depth 3+)
+  4. Checkout completed (depth 4)
+Call `show_widget` with `title: "checkout_funnel"`. Below the chart, add a
+one-line callout naming the single largest drop ("62% of sessions that started
+checkout never submitted payment — that's your largest single drop-off"), and
+a supporting waterfall table (Stage | Sessions | Drop to Next Step). Apply the
+express checkout caveat if depth-4 > depth-3.
 
 **Cart & order profile section**: One table with median order value, median
 product quantity, and discount rate. If discounted and full-price orders differ
@@ -253,7 +261,9 @@ Rules:
 
 ### Section 2 — Supporting Data
 
-**Checkout funnel** (all sessions)
+**Checkout funnel** (all sessions) — render the chart first via
+`../noibu-context/references/funnel-visualization.md` (four steps: ATC →
+Checkout started → Payment submitted → Completed), then a supporting table.
 Columns: Stage | Sessions | % of All Sessions | Drop to Next Step
 - One callout naming the single largest drop and its rate.
 - Express checkout caveat if depth-4 > depth-3.
