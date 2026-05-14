@@ -21,7 +21,7 @@ checkout?", "what payment methods are customers using?", "are there errors on my
     - "Yes — survey the full funnel, payment mix, delivery mix, and errors, then dig into anomalies"
     - "No thanks"
 
-   If they select yes, proceed to Full analysis.
+   If they select yes, proceed to Full analysis below.
 
 ## Full analysis
 
@@ -29,38 +29,19 @@ If the user asked for a broad analysis or said yes to the quick-answer offer,
 run the two-part workflow below.
 
 ---
-
-## Step 0: Authenticate
-
-If Noibu tools are not yet available in the session, ask the user to authenticate
-first. Once they do, the tools appear automatically.
-
-## Step 1: Resolve the domain
-
-- **UUID provided**: use it directly.
-- **Name provided**: call `noibu_get_domain`.
-    - Match found → use the UUID.
-    - Suggestions in error body → show them and ask which to use.
-    - No match, no suggestions → fall back to `noibu_list_domains`.
-- **Nothing provided**: call `noibu_list_domains` and ask the user to select.
-
-## Step 2: Determine the date range
-
-Default to the last 30 days unless the user specifies otherwise. Construct
-`startTime` / `endTime` as ISO 8601 UTC strings.
-
----
-
 ## Broad checkout overview
 
-Tell the user what you're about to query before starting. Fire all five queries in a single turn — do not wait for one before launching the next. Also call `noibu_context` in this same turn if you haven't already.
+Tell the user what you're about to query before starting — something like:
+"Starting with a broad look across your checkout
+to see funnel progression, payment methods, and delivery options."
+Fire all five queries in a single turn — do not wait for one before launching the next. Also load the Noibu context reference in this same turn if you haven't already.
 
 **Do not apply minimum session thresholds at this stage.**
 
-**Note on field discovery:** Use `noibu_context` or the API schema to confirm field names — do not guess.
+**Note on field discovery:** Use the Noibu context reference or the API schema to confirm field names — do not guess.
 
 ### Full funnel by depth
-Use `noibu_search_sessions`. Group by the field that represents how far each session
+Use the session query tool. Group by the field that represents how far each session
 progressed through the purchase funnel (funnel depth). Measure session count.
 Order by sessions descending.
 
@@ -69,7 +50,7 @@ Covers all sessions. Shows how many reached each stage:
 Compute step-to-step drop-off rates in post-processing.
 
 ### Cart & order value baseline
-Use `noibu_search_sessions`. Filter to sessions that reached at least the checkout
+Use the session query tool. Filter to sessions that reached at least the checkout
 start stage (funnel depth >= 2). Group by the field that indicates whether a
 discount was applied to the order. Measure session count, median completed order
 value, and median product quantity in the completed order. Order by sessions descending.
@@ -79,20 +60,20 @@ Gives discount rate among checkout-entering sessions, and whether discounted
 orders differ in size from full-price ones.
 
 ### Payment method mix
-Use `noibu_search_sessions`. Filter to sessions where checkout was completed. Group
+Use the session query tool. Filter to sessions where checkout was completed. Group
 by the field that lists payment method names used in a session (array join, limit
 20). Measure session count and median completed order value. Order by sessions
 descending.
 
 ### Delivery method mix
-Use `noibu_search_sessions`. Filter to sessions where checkout was completed. Group
+Use the session query tool. Filter to sessions where checkout was completed. Group
 by the field that lists delivery/shipping method names used in a session (array
 join, limit 20). Measure session count, median completed order value, and median
 shipping cost. Order by sessions descending.
 
 ### Priority errors on checkout pages
-Use `noibu_list_priority_errors`. Filter to priority-type issues on URLs containing
-"checkout". Match the analysis date window. Limit to 10 results.
+Use the priority errors tool. Filter to priority-type issues on URLs containing
+"checkout". 
 
 Returns pre-indexed error data — much faster than a session aggregation query.
 
@@ -118,44 +99,7 @@ Note: depth-4 exceeding depth-3 is expected — see express checkout note in dat
 
 ---
 
-## Displaying broad checkout overview results
-
-Present results in four sections. Use plain column headers — never expose internal
-field names.
-
-**Funnel section**: First, render the funnel as an inline bar chart — load
-`../noibu-context/references/funnel-visualization.md` and follow its workflow.
-Map depth counts to steps:
-  1. Add to cart (depth 1+ sessions)
-  2. Checkout started (depth 2+)
-  3. Payment submitted (depth 3+)
-  4. Checkout completed (depth 4)
-Call `show_widget` with `title: "checkout_funnel"`. Below the chart, add a
-one-line callout naming the single largest drop ("62% of sessions that started
-checkout never submitted payment — that's your largest single drop-off"), and
-a supporting waterfall table (Stage | Sessions | Drop to Next Step). Apply the
-express checkout caveat if depth-4 > depth-3.
-
-**Cart & order profile section**: One table with median order value, median
-product quantity, and discount rate. If discounted and full-price orders differ
-meaningfully in median size, call it out.
-
-**Payment & delivery section**: One table per dimension (method name, order count,
-median order value). Note if a major expected payment method appears absent or
-near-zero — this may indicate a configuration gap. In the delivery table, flag any
-rows with $0 median order value — these typically represent in-store pickup, B2B,
-or retail channels flowing through the same Shopify instance rather than online orders;
-exclude them from ecommerce delivery analysis. Also flag delivery method names in
-non-English that show unusually high order values — these are likely local currency
-values (EUR, MXN, JPY, etc.) that have not been converted to the store's base currency.
-
-**Checkout page errors section**: List active priority errors from Q5 with
-humanId, title, and error type. If Q5 returns nothing, say "No active priority errors
-detected on checkout pages."
-
----
-
-## Finding what to dig into next
+## Reviewing the overview — Finding what to dig into next
 
 Identify the 2–4 most interesting signals. Follow-up queries are not predetermined —
 they depend on what the data shows.
@@ -164,15 +108,19 @@ they depend on what the data shows.
 |---|---|
 | High checkout → payment drop (depth 2→3) | Break down by device type — filter to checkout-entering sessions, group by device; mobile form friction is the most common explanation |
 | High payment → completion drop (depth 3→4) | Break down by payment method — filter to payment-submitted sessions, group by payment method names; completion rates often vary sharply by gateway |
-| ATC → checkout start rate unexpectedly low | `noibu_list_page_group_journeys` anchored to `/cart` to see what users do instead of proceeding |
+| ATC → checkout start rate unexpectedly low | Use the user journeys tool anchored to `/cart` to see what users do instead of proceeding |
 | Suspicion that a market blocks at checkout | Group by country filtered to cart-adding sessions — near-zero CVR in a high-traffic country usually means a shipping restriction or missing payment method |
-| Active priority errors returned | Call `noibu_get_error` on the top 1–2 issues; include humanId and title so a developer can find them in the console |
+| Active priority errors returned | Use the error detail tool on the top 1–2 issues; include humanId and title so a developer can find them in the console |
 | Discount rate very high (>50% of checkout sessions) | Flag as a business observation — high promotion dependency is a margin risk; no Noibu follow-up needed |
 | A delivery method with unusually high median shipping cost | Cross-tab by country to check if it's concentrated in one market |
 
+---
+
 ### Transitioning to fuller analysis
 
-Write a short, plain-language message using actual numbers: name the key finding and explain what you're investigating next and why. Don't say "Proceeding to Phase 2."
+**This step is mandatory — always perform it without exception. Do not skip or summarize it away.**
+
+Write a short, plain-language message about the broad analysis using actual numbers: give a summary of the broad analysis, name the key findings and explain what you're investigating next and why. Don't say "Proceeding to Phase 2."
 
 Then either auto-run the follow-ups (preferred for broad, open-ended requests)
 or ask first if the proposed direction is a significant departure from what the user asked.
@@ -189,7 +137,7 @@ Run only the follow-up queries identified above — not a fixed set.
 - Lower traffic (<50K): keep thresholds very low or skip
 
 ### Device breakdown for a funnel stage
-Use `noibu_search_sessions` when a step-to-step drop is concerning.
+Use the session query tool when a step-to-step drop is concerning.
 
 Filter to sessions that reached at least checkout start (funnel depth >= 2). Group
 by device type. Measure session count, checkout start count, payment submission
@@ -199,7 +147,7 @@ Compute device-specific step rates in post-processing. A device where checkout �
 payment rate is 30%+ lower than others is a strong friction or JS error signal.
 
 ### Country breakdown for funnel anomalies
-Use `noibu_search_sessions` when you suspect a market is blocked at checkout.
+Use the session query tool when you suspect a market is blocked at checkout.
 
 Filter to sessions that added to cart (funnel depth >= 1). Group by country code
 (limit 25). Measure session count and conversion rate. Order by sessions descending.
@@ -208,7 +156,7 @@ Near-zero CVR in a high-traffic market is almost always a shipping restriction
 or unsupported payment method. Flag as an ops issue, not a UX problem.
 
 ### Payment method completion rate
-Use `noibu_search_sessions` when the payment → completion drop rate is high overall.
+Use the session query tool when the payment → completion drop rate is high overall.
 
 Filter to sessions that reached payment submission (funnel depth >= 3). Group by
 payment method names (array join, limit 20). Measure session count and checkout
@@ -219,11 +167,11 @@ Compute completion rate per method. A method with high reach but low completion
 
 ### Error detail for checkout issues
 Use when Q5 returned active priority errors.
-Call `noibu_get_error` on the top 1–2 issues by session impact.
+Use the error detail tool on the top 1–2 issues by session impact.
 Include humanId and title in the report so the developer can find them in the console.
 
 ### Cart page exit analysis
-Use `noibu_list_page_group_journeys` when ATC → checkout start rate is unexpectedly low.
+Use the user journeys tool when ATC → checkout start rate is unexpectedly low.
 
 Anchor on URLs starting with /cart, using loose mode. Retrieve forward paths only
 to a max depth of 5 steps.
@@ -248,22 +196,19 @@ Write after both phases are complete. Number each pair.
 Lead with 3–5 finding + action pairs:
 
 > **1. Finding:** [specific step, device, or page] + [one concrete number] + [why it matters].
-> **Action:** [One specific, testable thing to do.]
+> **Suggested Action:** [One specific, testable thing to do.]
 
 Rules:
 - Order by impact, not by how obvious the finding is.
 - Every finding must name a specific funnel step, device, payment method, or page.
 - Every action must be concrete enough to hand off.
 - Cap at 5. If more signals exist: "X more signals in the data below."
-- No tables in this section.
 
 ---
 
-### Section 2 — Supporting Data
+### Section 2 — Supporting Data *(for validation and deeper reading)*
 
-**Checkout funnel** (all sessions) — render the chart first via
-`../noibu-context/references/funnel-visualization.md` (four steps: ATC →
-Checkout started → Payment submitted → Completed), then a supporting table.
+**Checkout funnel** (all sessions)
 Columns: Stage | Sessions | % of All Sessions | Drop to Next Step
 - One callout naming the single largest drop and its rate.
 - Express checkout caveat if depth-4 > depth-3.
@@ -351,15 +296,23 @@ The correct names will already be known from the successful queries above.
    const END_TIME = "...";
    ```
 
-2. **On page load**, call `window.cowork.callMcpTool()` for each of the five
+2. **Section 1 (Key Findings & Recommended Actions) must be generated dynamically.**
+   Do not hardcode the findings from the in-session report into the artifact HTML.
+   Instead, after all live data has been fetched on page load, pass the results to
+   `window.cowork.askClaude()` to derive the findings fresh each time. This ensures
+   the key findings always reflect the current data, not a stale snapshot from when
+   the report was first run.
+
+3. **On page load**, call `window.cowork.callMcpTool()` for each of the five
    Phase 1 queries (funnel depth, cart/order baseline, payment mix, delivery mix,
    and priority errors), plus any Phase 2 queries that were run. Use the exact
    same field names and parameters that produced results during the analysis —
    copy them directly from the working queries above.
 
    **Critical implementation details:**
-    - `callMcpTool()` requires the **fully-qualified** tool name:
-      `const TOOL = "mcp__fcde485d-....__noibu_search_sessions";`
+    - `callMcpTool()` requires the **fully-qualified** tool name. Use the exact
+      tool names that were resolved and confirmed to work during the analysis
+      session — do not hardcode or guess them.
     - Parse records from the wrapped response:
       ```js
       function records(res) {
@@ -389,10 +342,10 @@ The correct names will already be known from the successful queries above.
       }
       ```
 
-3. **After all fetches resolve**, call `window.cowork.askClaude()` for callouts.
+4. **After all fetches resolve**, call `window.cowork.askClaude()` for callouts.
    Always store the result and pass it through `parseClaudeText()` before rendering.
 
-4. **Render** using the same visual structure as the in-session report.
+5. **Render** using the same visual structure as the in-session report.
 
 List all Noibu tool names used in the `mcp_tools` array of `create_artifact`.
 

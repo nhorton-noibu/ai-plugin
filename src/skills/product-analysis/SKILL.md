@@ -30,27 +30,6 @@ run the two-part workflow below.
 
 ---
 
-## Step 0: Authenticate
-
-If Noibu tools are not yet available in the session, ask the user to authenticate
-first. Once they do, the tools appear automatically.
-
-## Step 1: Resolve the domain
-
-- **UUID provided**: use it directly.
-- **Name provided**: call `noibu_get_domain`.
-    - Match found → use the UUID.
-    - Suggestions in error body → show them and ask which to use.
-    - No match, no suggestions → fall back to `noibu_list_domains`.
-- **Nothing provided**: call `noibu_list_domains` and ask the user to select.
-
-## Step 2: Determine the date range
-
-Default to the last 30 days unless the user specifies otherwise. Construct
-`startTime` / `endTime` as ISO 8601 UTC strings.
-
----
-
 ## Broad product overview
 
 Tell the user what's happening before queries run — something like:
@@ -58,38 +37,38 @@ Tell the user what's happening before queries run — something like:
 to see what's getting traffic, what's converting, and where the gaps are."
 
 Fire all five queries in a single turn — do not wait for one before launching
-the next. Also call `noibu_context` in this same turn if you haven't already.
+the next. Also load the Noibu context guide in this same turn if you haven't already.
 
 **Do not apply minimum session thresholds at this stage.**
 
 **Note on field discovery:** The descriptions below explain what each query
-should measure conceptually. Use `noibu_context` or the API schema to confirm
+should measure conceptually. Use the Noibu context guide or the API schema to confirm
 the current field names before running. Do not guess field names.
 
 ### Products by views
-Use `noibu_search_sessions`. Group by the field that lists which product titles
+Use the session search tool. Group by the field that lists which product titles
 were viewed in a session (array join, limit 50). Measure session count,
 conversion rate, and revenue per session. Order by sessions descending.
 
 ### Products by add-to-cart
-Use `noibu_search_sessions`. Group by the field that lists which product titles
+Use the session search tool. Group by the field that lists which product titles
 were added to cart in a session (array join, limit 50). Measure session count
 and conversion rate. Order by sessions descending.
 
 ### Products by purchase
-Use `noibu_search_sessions`. Group by the field that lists which product titles
+Use the session search tool. Group by the field that lists which product titles
 appeared in completed orders (array join, limit 50). Measure session count and
 median order/cart value. Order by sessions (completed-order count), not revenue.
 Median cart value reflects the typical order size when this product was purchased
 — a useful merchandising signal even with multi-product inflation.
 
 ### Collections by conversion
-Use `noibu_search_sessions`. Group by the field that lists which collection titles
+Use the session search tool. Group by the field that lists which collection titles
 were viewed in a session (array join, limit 30). Measure session count, conversion
 rate, and revenue per session. Order by sessions descending.
 
 ### Product types by conversion
-Use `noibu_search_sessions`. Group by the field that lists which product types
+Use the session search tool. Group by the field that lists which product types
 were viewed in a session (array join, limit 20). Measure session count, conversion
 rate, and revenue per session. Order by sessions descending.
 Product types give a mid-level view between SKUs and collections — useful for
@@ -120,35 +99,15 @@ notably over- or under-performing.
 
 ---
 
-## Displaying the overview results
-
-Present results in one section per dimension — products, collections, types.
-For each:
-- Show a clean table. Use plain column headers: Views, Add-to-Cart Sessions,
-  Purchase Sessions, Conversion Rate, Revenue per Session. Never expose internal
-  field names.
-- For the products section, add a computed "View → ATC" column derived from the products-by-views
-  and products-by-add-to-cart data — this is the most useful single signal for merchandising decisions.
-- Add a specific one-sentence callout that names the product or collection and
-  the number ("Devon Knit Polo has 9,100 views but only an 11% view-to-ATC rate,
-  well below the ~23% average for top-traffic products"). Avoid generic
-  observations the user could read off the table.
-- Flag any obvious anomalies: near-zero CVR on a high-traffic collection,
-  products in the products-by-purchase results with no corresponding products-by-views entry (direct purchases, possibly
-  from email links), or collections that look like localization variants.
-
----
-
-## Reviewing the overview — finding what to dig into
+## Reviewing the overview — Finding what to dig into next
 
 Identify the 2–4 most interesting signals using the diagnostic playbook below.
 Follow-up queries are not predetermined — they depend on what the data shows.
 
 | If you see this… | Consider this follow-up |
 |---|---|
-| Any product flagged as a key anomaly | Funnel depth breakdown first — it renders the funnel chart and shows where the cliff is. Then layer the targeted follow-up below. |
-| Product in top-20 views but low view-to-ATC rate | Page-level deep-dive **after** the funnel chart: scroll depth, time on page, click engagement, errors — low scroll depth is the most common explanation for a view→ATC cliff. |
-| Product with strong ATC but weak purchase completion | The funnel chart will already show whether the cliff is checkout-start, payment, or completion. Drill into the specific stage from there. |
+| Product in top-20 views but low view-to-ATC rate | Page-level deep-dive: scroll depth, time on page, click engagement, errors — low scroll depth is the most common explanation |
+| Product with strong ATC but weak purchase completion | Funnel depth breakdown: filter to sessions that viewed this product and group by funnel depth to see exactly where they stop |
 | Collection with CVR well below site average | Country breakdown: filter to sessions that viewed this collection and group by country — near-zero CVR in multiple LATAM or non-primary markets usually means a localization or checkout gap, not a product problem |
 | A collection's CVR well below others in same category | Product mix drill-down: filter sessions by collection and group by viewed product titles to see which products in the collection are and aren't converting |
 | Product type outperforming or underperforming significantly | Break down by product title within that type to find which specific products are driving or dragging the number |
@@ -156,6 +115,8 @@ Follow-up queries are not predetermined — they depend on what the data shows.
 | Collections with non-English names at very low CVR | Check if checkout is supported in those markets; this is typically a shipping or payment gap, not a product problem |
 
 ### Transitioning to deeper analysis
+
+**This step is mandatory — always perform it without exception. Do not skip or summarize it away.**
 
 Write a short, plain-language message that:
 1. Summarises what the overview found in 2–3 sentences — use actual numbers
@@ -184,7 +145,7 @@ Run only the follow-up queries identified above — not a fixed set.
 - Lower traffic (<50K): keep thresholds very low or skip
 
 ### Product page deep-dive
-Use `noibu_get_page_visits` when a product has high views but a low
+Use the page visits tool when a product has high views but a low
 view-to-ATC rate. The most important metric is scroll depth — if the median
 scroll depth ratio is below 0.25, users are not reaching the add-to-cart button.
 
@@ -204,7 +165,7 @@ Interpret scroll depth:
 - High errors on one URL variant: potential JS error blocking add-to-cart
 
 ### Funnel depth breakdown for a specific product
-Run this **whenever a product is flagged as a key anomaly** — regardless of which step the drop is at. The funnel chart is the best way to communicate where sessions are lost, and a view-to-ATC cliff is often the more important story than an ATC→purchase one. Use `noibu_search_sessions`.
+Use the session search tool when a product has strong ATC but weak purchase.
 
 Filter to sessions where the target product title was viewed. Group by the funnel
 depth field (represents how far through the purchase funnel the session
@@ -221,21 +182,8 @@ a data error.
 Lead with "Viewed only %" = null sessions ÷ total sessions — this is the most
 actionable top-line number.
 
-After the query returns, render the funnel as an inline bar chart — load
-`../noibu-context/references/funnel-visualization.md` and follow its workflow.
-Pass five steps in order:
-  1. Viewed (total sessions that viewed the product)
-  2. Added to cart (depth ≥ 1)
-  3. Checkout started (depth ≥ 2)
-  4. Payment submitted (depth ≥ 3)
-  5. Completed (depth = 4)
-Call `show_widget` with `title: "product_funnel"` and a loading message that
-names the product (e.g. "Drawing Devon Knit Polo funnel..."). The compressed-
-first-bar mode in the template handles the typical viewed-vs-ATC ratio
-automatically.
-
 ### Country breakdown for underperforming collections
-Use `noibu_search_sessions` when a collection's CVR is well below the site average.
+Use the session search tool when a collection's CVR is well below the site average.
 
 Filter to sessions where the target collection title was viewed. Group by country
 code (limit 20). Measure session count, conversion rate, and revenue per session.
@@ -247,7 +195,7 @@ This is almost always a checkout availability or shipping restriction gap —
 surface it as an ops/localization issue rather than a merchandising one.
 
 ### Product mix within a collection
-Use `noibu_search_sessions` when a collection underperforms and the country
+Use the session search tool when a collection underperforms and the country
 breakdown looks clean (i.e. it's not a localization issue).
 
 Filter to sessions where the target collection title was viewed. Group by the
@@ -255,7 +203,7 @@ viewed product titles field (array join, limit 25). Measure session count and
 conversion rate. Order by sessions descending.
 
 ### Journey paths from a product page
-Use `noibu_list_page_group_journeys` when you want to understand exit behaviour for a
+Use the user journey tool when you want to understand exit behaviour for a
 specific product — especially one with high views but high bounce.
 
 Anchor on URLs starting with the product's slug fragment, using loose mode.
@@ -267,8 +215,7 @@ max depth of 6 steps.
 ## Rendering the final report
 
 **Guiding principle: insights first, data second.** The report must be scannable
-in 30 seconds. A reader who stops after the first section should leave knowing
-exactly what to do. Every table that follows is supporting evidence, not the headline.
+in 30 seconds. Every table that follows is supporting evidence, not the headline.
 
 ---
 
@@ -283,14 +230,13 @@ Lead with 3–5 finding + action pairs. This is the most important part of the r
 Format each as:
 
 > **1. Finding:** [Product/collection name] + [one concrete number] + [why it matters in one clause].
-> **Action:** [One specific, testable thing to do about it.]
+> **Suggested Action:** [One specific, testable thing to do about it.]
 
 Rules:
 - Order by impact, not by how obvious the finding is.
 - Every finding must name a specific product, collection, or type — no generic observations.
-- Every action must be concrete enough to hand off ("Move the ATC button above the fold on the Devon Knit Polo PDP", not "improve the product page").
+- Every action must be concrete enough to hand off.
 - Cap at 5 pairs. If more signals exist, add one short line: "3 more signals in the data below."
-- No tables in this section — findings and actions only.
 
 ---
 
@@ -355,7 +301,7 @@ No raw data dumps. If a table helps, cap it at 8 rows.
   "WOMEN'S CLASSIC TEE - WT0200005"). Flag near-duplicates rather than
   silently merging them.
 - **URL fragmentation.** Product pages appear under multiple URL patterns.
-  Always use URL CONTAINS with a SKU code or slug fragment in PageVisitsQuery.
+  Always use URL CONTAINS with a SKU code or slug fragment in page visit queries.
 - **Null funnel depth = viewed only.** Always label these "Viewed only",
   not blank or missing.
 
@@ -399,8 +345,8 @@ The correct names will already be known from the successful queries above.
    the analysis — copy them directly from the working queries above.
 
    **Critical implementation details:**
-    - `callMcpTool()` requires the **fully-qualified** tool name:
-      `const TOOL = "mcp__fcde485d-....__noibu_search_sessions";`
+    - `callMcpTool()` requires the **fully-qualified** tool name. Use the tool
+      names from the `mcp_tools` array that were active during the analysis session.
     - Parse records from the wrapped response:
       ```js
       function records(res) {
@@ -430,7 +376,31 @@ The correct names will already be known from the successful queries above.
       }
       ```
 
-3. **After all fetches resolve**, call `window.cowork.askClaude()` for callouts.
+3. **After all fetches resolve**, generate the **Key Findings & Recommended Actions**
+   section dynamically using `window.cowork.askClaude()`. Pass all fetched data as
+   context so the findings reflect the current data load, not the session's original analysis.
+
+   Structure the prompt to produce the same numbered finding + action format used in
+   the in-session report:
+
+   ```js
+   const findingsRes = await window.cowork.askClaude(
+     `You are analyzing ecommerce product performance data. Based on the data below,
+      write 3–5 Key Findings & Recommended Actions in this exact format for each:
+      "Finding: [product/collection name] + [one concrete number] + [why it matters].
+       Action: [one specific, testable recommendation]."
+      Order by impact. Every finding must name a specific product or collection.
+      Every action must be concrete enough to hand off.
+      Data: ${JSON.stringify({ productsByViews, productsByAtc, productsByPurchase, collections, productTypes })}`,
+     []
+   );
+   findingsEl.textContent = parseClaudeText(findingsRes);
+   ```
+
+   Always store the result and pass it through `parseClaudeText()` before rendering.
+   Setting `element.textContent = findingsRes` directly will render `[object Object]`.
+
+4. **For supporting data tables** (Section 2), also call `window.cowork.askClaude()` for callouts.
    Always store the result and pass it through `parseClaudeText()` before rendering:
    ```js
    const insightRes = await window.cowork.askClaude(
@@ -439,11 +409,11 @@ The correct names will already be known from the successful queries above.
    );
    insightEl.textContent = parseClaudeText(insightRes);
    ```
-   Setting `element.textContent = insightRes` directly will render `[object Object]`.
 
-4. **Render** using the same visual structure as the in-session report.
+5. **Render** using the same visual structure as the in-session report, with
+   Section 1 (Key Findings & Recommended Actions) appearing first and prominently.
 
-List all Noibu tool names used in the `mcp_tools` array of `create_artifact`.
+List all Noibu tools used during the analysis in the `mcp_tools` array of `create_artifact`.
 
 ---
 

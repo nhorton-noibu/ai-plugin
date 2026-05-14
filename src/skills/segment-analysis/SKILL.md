@@ -31,30 +31,6 @@ run the two-part workflow below.
 
 ---
 
-## Step 0: Authenticate
-
-If Noibu tools (`noibu_search_sessions` etc.) are not yet available in the
-session, ask the user to authenticate first. Once they do, the tools appear
-automatically.
-
-## Step 1: Resolve the domain
-
-- **UUID provided**: use it directly.
-- **Name provided**: call `noibu_get_domain`.
-    - Match found → use the UUID.
-    - No match but suggestions returned in error body (e.g.
-      `["www.brand.com", "www.brand.ca"]`) → show the suggestions and ask which
-      to use. Do not fall through to `noibu_list_domains` when suggestions exist.
-    - No match, no suggestions → fall back to `noibu_list_domains`.
-- **Nothing provided**: call `noibu_list_domains` and ask the user to select.
-
-## Step 2: Determine the date range
-
-Default to the last 30 days unless the user specifies otherwise. Construct
-`startTime` / `endTime` as ISO 8601 UTC strings.
-
----
-
 ## Broad segment overview
 
 Tell the user what's happening before queries run — something like:
@@ -63,22 +39,23 @@ and marketing channel — to see where conversion stands and spot anything
 worth investigating further."
 
 Fire all three queries in a single turn — do not wait for one before launching
-the next. Also call `noibu_context` in this same turn if you haven't already.
+the next. Also resolve any field name ambiguities in this same turn if you
+haven't already.
 
 **Do not apply minimum session thresholds at this stage.** See the full picture
 first; you'll calibrate thresholds when running follow-ups.
 
 **Note on field discovery:** The descriptions below explain what each query
-should measure conceptually. Use `noibu_context` or the API schema to confirm
-the current field names before running. Do not guess field names.
+should measure conceptually. Use the Noibu connector's schema or context tools
+to confirm the current field names before running. Do not guess field names.
 
 ### Device breakdown
-Use `noibu_search_sessions`. Group by the field representing device type. Measure
+Query session data grouped by the field representing device type. Measure
 session count, conversion rate, and revenue per session. Order by conversion
 rate descending.
 
 ### Country breakdown
-Use `noibu_search_sessions`. Group by the field representing country (limit 30).
+Query session data grouped by the field representing country (limit 30).
 Measure session count, conversion rate, and revenue per session. Order by
 sessions descending.
 
@@ -86,7 +63,7 @@ Order by sessions (not CVR) so the highest-traffic markets appear first —
 easier to spot high-volume underperformers.
 
 ### Marketing channel breakdown
-Use `noibu_search_sessions`. Group by the fields representing UTM source and UTM
+Query session data grouped by the fields representing UTM source and UTM
 medium together (limit 30). Measure session count, conversion rate, and revenue
 per session. Order by sessions descending.
 
@@ -115,22 +92,10 @@ Follow-up queries are not predetermined — they depend on what the data shows.
 | A large share of sessions with no channel attribution | Look at landing pages or referral sources to understand what's driving untagged traffic |
 | Revenue per session and conversion rate moving in opposite directions for a segment | Flag as likely a currency or order value difference — may not need a follow-up query |
 
-### Displaying the broad overview results
-
-Present the results in a clean, scannable format — one section per dimension
-(device, country, channel). For each:
-- Show a simple table with plain column headers: Sessions, Conversion Rate,
-  Revenue per Session. Avoid internal field names in any user-facing label.
-- Add a brief one-sentence callout. Name the specific segment and number
-  ("Canada at 0.18% conversion is well below your 2.1% site average"), then
-  state the implication ("this points to a landing page or checkout issue, not
-  a targeting problem"). Avoid generic observations the user could read off the
-  table themselves. Use plain language — no technical field names or jargon.
-- Flag any data quality issues simply: untagged traffic, near-zero conversion
-  on obvious awareness channels, or currencies that look like local values
-  rather than USD.
 
 ### Transitioning to the deeper analysis
+
+**This step is mandatory — always perform it without exception. Do not skip or summarize it away.**
 
 Write a short, plain-language message that:
 1. Summarises what the overview found in 2–3 sentences — reference the actual
@@ -161,41 +126,29 @@ Run only the follow-up queries identified above — not a fixed set.
 - Lower traffic (<50K): keep thresholds very low or skip them entirely
 
 **Campaign breakdown** — when one channel's aggregate conversion rate hides
-variation between individual campaigns within it. Use `noibu_search_sessions`,
-grouped by UTM campaign and UTM medium together (limit 25). Order by sessions
-descending. Apply the same measures as the broad overview (session count, CVR,
-revenue per session).
+variation between individual campaigns within it. Query session data grouped by
+UTM campaign and UTM medium together (limit 25). Order by sessions descending.
+Apply the same measures as the broad overview (session count, CVR, revenue per
+session).
 
 **Landing page breakdown** — when a country or campaign seems to have friction
-at the entry point. Use `noibu_search_sessions`, grouped by the landing URL field
-(limit 25). Order by sessions descending. Filter to the relevant country or
-campaign from the broad overview to keep results focused.
+at the entry point. Query session data grouped by the landing URL field (limit
+25). Order by sessions descending. Filter to the relevant country or campaign
+from the broad overview to keep results focused.
 
 **Funnel stage breakdown** — when you want to know *where* in the checkout
-a segment drops off. Use `noibu_search_sessions`, grouped by funnel depth and one
+a segment drops off. Query session data grouped by funnel depth and one
 additional dimension (device type, country, or UTM medium — whichever the
 overview flagged). Order by sessions descending. Choose the second dimension
 based on what the overview showed; computing step-to-step rates by segment
 reveals exactly where friction is highest.
 
-After the query returns, decide based on segment count:
-
-- **One segment** (e.g. only mobile is being investigated): render the funnel as
-  an inline bar chart — load `../noibu-context/references/funnel-visualization.md`
-  and follow its workflow. Pass four steps: Add to cart (depth ≥ 1) → Checkout
-  started (depth ≥ 2) → Payment submitted (depth ≥ 3) → Completed (depth = 4),
-  scoped to the focal segment. Call `show_widget` with `title: "<segment>_funnel"`
-  (e.g. `mobile_funnel`).
-- **Two segments** (e.g. mobile vs desktop): call the reference twice, once per
-  segment, and render stacked. Do not encode the comparison via the reference's
-  `delta` field — that field is for time-period comparison and would muddy a
-  segment-vs-segment read.
-- **Three or more segments**: stay on the table. The chart format does not
-  generalise to N parallel funnels.
-
 ---
 
 ## Rendering the final report
+
+**Guiding principle: insights first, data second.** The report must be scannable
+in 30 seconds. Every table that follows is supporting evidence, not the headline.
 
 **Structure:**
 1. **Key Findings & Recommended Actions** — Write this section after both phases
@@ -269,8 +222,9 @@ names. The correct names will already be known from the successful queries above
 
     - `callMcpTool()` requires the **fully-qualified** tool name — the same
       `mcp__<server>__<tool>` string used in the `mcp_tools` allowlist. The
-      short name (e.g. `"noibu_search_sessions"`) will be rejected. Store it as
-      a constant: `const TOOL = "mcp__fcde485d-....__noibu_search_sessions";`
+      short name will be rejected. Store it as a constant:
+      `const SESSION_TOOL = "mcp__<server-id>__<tool-name>";`
+      Use the exact fully-qualified name that was active during the session.
 
     - `callMcpTool()` returns a content-wrapped object, not a plain parsed
       response. Parse records like this:
@@ -289,15 +243,32 @@ names. The correct names will already be known from the successful queries above
       }
       ```
 
-3. **After all fetches resolve**, call `window.cowork.askClaude()` to generate
-   insight callouts. **Embed the data directly in the prompt string** — do NOT
-   rely on the second `data[]` parameter:
+3. **After all fetches resolve**, generate the **Key Findings & Recommended
+   Actions** section dynamically by calling `window.cowork.askClaude()` with
+   all fetched data embedded directly in the prompt. Do not bake static findings
+   text into the artifact HTML.
+
    ```js
-   window.cowork.askClaude(
-     `In one sentence, what is the key finding? Data: ${JSON.stringify(rows)}`,
-     []
-   )
+   const findingsPrompt = `
+     You are analyzing ecommerce segment data. Based on the data below, write
+     3–5 numbered finding + action pairs for the Key Findings & Recommended
+     Actions section, ordered by revenue impact. Each finding must name a
+     specific segment and include a concrete number. Each action must be specific
+     enough to hand off to a developer or marketer. No tables — prose only.
+
+     Device data: ${JSON.stringify(deviceRows)}
+     Country data: ${JSON.stringify(countryRows)}
+     Channel data: ${JSON.stringify(channelRows)}
+     Follow-up data: ${JSON.stringify(followUpRows)}
+     Site-wide conversion rate: ${sitewideCVR}%
+   `;
+   const findings = await window.cowork.askClaude(findingsPrompt, []);
    ```
+
+   Then call `askClaude()` a second time to generate the per-dimension insight
+   callouts for the Segment Overview section, passing each dimension's rows in
+   the prompt.
+
    The return value may be a string or an object — coerce it before use:
    ```js
    function toStr(v) {
@@ -309,9 +280,11 @@ names. The correct names will already be known from the successful queries above
    ```
 
 4. **Render** using the same visual structure and styling tokens as the
-   in-session report.
+   in-session report. The Key Findings & Recommended Actions section must be
+   populated from the `askClaude()` result — never from static text.
 
-List all Noibu tool names used in the `mcp_tools` array of `create_artifact`.
+List all Noibu tool fully-qualified names used in the `mcp_tools` array of
+`create_artifact`.
 
 ---
 
