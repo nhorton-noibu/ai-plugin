@@ -1,0 +1,14 @@
+{
+  "name": "noibu-plugins",
+  "owner": {
+    "name": "Noibu",
+    "email": "support@noibu.com"
+  },
+  "plugins": [
+    {
+      "name": "noibu",
+      "source": "./src",
+      "description": "Connects Claude to your Noibu store data — session analytics, error diagnosis, checkout analysis, product performance, and more."
+    }
+  ]
+}

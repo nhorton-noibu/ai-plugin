@@ -11,13 +11,22 @@ stack, build workflows to automate work end-to-end.
 
 ## Installation
 
-### Claude Code
+### Claude Desktop (manual)
 
 1. Download the Noibu plugin: https://github.com/Noibu/ai-plugin/releases/latest/download/noibu.zip
 2. Go to **Customize**
 3. Click **Create plugin** → **Upload plugin**
 4. Upload the `noibu.zip` file
-5. Sit back and relax knowing you"ve done a good job
+
+### Claude Code
+
+Install directly from the marketplace — no download required:
+
+```shell
+/plugin marketplace add Noibu/ai-plugin
+/plugin install noibu@noibu-plugins
+/reload-plugins
+```
 
 ## How to develop
 
